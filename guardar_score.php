@@ -1,35 +1,29 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Headers: Content-Type');
-    header('Access-Control-Allow-Methods: POST, OPTIONS');
-    http_response_code(200);
-    exit;
-}
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: POST');
+header('Content-Type: application/json');
 
-// Manejar preflight CORS
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-// Procesar solicitud POST
+// Leer datos JSON del body
 $input = json_decode(file_get_contents('php://input'), true);
 $nombre = trim($input['nombre'] ?? '');
 $puntaje = intval($input['puntaje'] ?? 0);
 
+// Validación simple
 if ($nombre === '' || $puntaje <= 0) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Nombre o puntaje inválido.']);
     exit;
 }
 
+// Registro
 $registro = [
     'nombre' => $nombre,
     'puntaje' => $puntaje,
     'fecha' => date('Y-m-d H:i:s')
 ];
 
+// Guardar en scores.json
 $scoresFile = 'scores.json';
 $scores = [];
 
@@ -42,4 +36,6 @@ $scores[] = $registro;
 
 file_put_contents($scoresFile, json_encode($scores, JSON_PRETTY_PRINT));
 
+// Respuesta
 echo json_encode(['status' => 'ok']);
+?>
