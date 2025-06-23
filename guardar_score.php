@@ -1,4 +1,13 @@
 <?php
+// Manejo de CORS completo
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Methods: POST');
+    http_response_code(200);
+    exit;
+}
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Access-Control-Allow-Methods: POST');
@@ -7,10 +16,10 @@ header('Content-Type: application/json');
 // Leer datos JSON del body
 $input = json_decode(file_get_contents('php://input'), true);
 $nombre = trim($input['nombre'] ?? '');
-$puntaje = intval($input['puntaje'] ?? 0);
+$puntaje = $input['puntaje'] ?? null;
 
-// Validación simple
-if ($nombre === '' || $puntaje <= 0) {
+// Validación mejorada
+if ($nombre === '' || !is_numeric($puntaje) || $puntaje < 0) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Nombre o puntaje inválido.']);
     exit;
@@ -19,7 +28,7 @@ if ($nombre === '' || $puntaje <= 0) {
 // Registro
 $registro = [
     'nombre' => $nombre,
-    'puntaje' => $puntaje,
+    'puntaje' => intval($puntaje),
     'fecha' => date('Y-m-d H:i:s')
 ];
 
@@ -34,8 +43,10 @@ if (file_exists($scoresFile)) {
 
 $scores[] = $registro;
 
+// Guardar ordenado por puntaje descendente
+usort($scores, fn($a, $b) => $b['puntaje'] <=> $a['puntaje']);
+
 file_put_contents($scoresFile, json_encode($scores, JSON_PRETTY_PRINT));
 
 // Respuesta
 echo json_encode(['status' => 'ok']);
-?>
